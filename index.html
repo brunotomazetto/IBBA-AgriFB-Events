@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Event Tracker — Equity Research CRM</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ── SIDEBAR ─────────────────────────────────────────────────── -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <span class="logo-mark">ER</span>
+    <div class="logo-text">
+      <span class="logo-title">Event Tracker</span>
+      <span class="logo-sub">Equity Research CRM</span>
+    </div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <a href="#" class="nav-item active" data-view="dashboard">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Dashboard
+    </a>
+    <a href="#" class="nav-item" data-view="events">
+      <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      Events
+    </a>
+    <a href="#" class="nav-item" data-view="speakers">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      Speakers
+    </a>
+    <a href="#" class="nav-item" data-view="email">
+      <svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="2,4 12,13 22,4"/></svg>
+      Send Email
+    </a>
+  </nav>
+
+  <div class="sidebar-footer">
+    <button class="btn-import" onclick="importData()">
+      <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Import JSON
+    </button>
+    <button class="btn-export" onclick="exportData()">
+      <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      Export JSON
+    </button>
+  </div>
+</aside>
+
+<!-- ── MAIN ────────────────────────────────────────────────────── -->
+<main class="main" id="main">
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <button class="sidebar-toggle" onclick="toggleSidebar()">
+        <svg viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <h1 class="page-title" id="pageTitle">Dashboard</h1>
+    </div>
+    <div class="topbar-right">
+      <span class="today-badge" id="todayBadge"></span>
+      <button class="btn-primary" id="topbarAction" onclick="openNewEventModal()">
+        + New Event
+      </button>
+    </div>
+  </header>
+
+  <!-- ══ VIEW: DASHBOARD ══════════════════════════════════════════ -->
+  <section class="view active" id="view-dashboard">
+    <div class="kpi-grid" id="kpiGrid"></div>
+    <div class="dash-grid">
+      <div class="card">
+        <div class="card-header">
+          <h2>Pipeline by Status</h2>
+        </div>
+        <div class="chart-wrap" id="chartStatus"></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <h2>Needs Attention</h2>
+          <span class="badge-urgent" id="urgentCount"></span>
+        </div>
+        <div class="attention-list" id="attentionList"></div>
+      </div>
+      <div class="card card-wide">
+        <div class="card-header">
+          <h2>Recent Activity</h2>
+        </div>
+        <div class="activity-list" id="activityList"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ VIEW: EVENTS ═════════════════════════════════════════════ -->
+  <section class="view" id="view-events">
+    <div class="toolbar">
+      <div class="search-wrap">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="searchInput" placeholder="Search events, speakers…" oninput="renderEvents()">
+      </div>
+      <div class="filter-chips" id="filterChips"></div>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table" id="eventsTable">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Event Name</th>
+            <th>Speaker</th>
+            <th>Sector</th>
+            <th>Status</th>
+            <th>Registered</th>
+            <th>Requested</th>
+            <th>Last F-UP</th>
+            <th>Scheduled</th>
+            <th>SLA</th>
+            <th>Observations</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="eventsBody"></tbody>
+      </table>
+      <div class="empty-state" id="emptyEvents" style="display:none">
+        <div class="empty-icon">📋</div>
+        <p>No events yet. Click <strong>+ New Event</strong> to get started.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ VIEW: SPEAKERS ═══════════════════════════════════════════ -->
+  <section class="view" id="view-speakers">
+    <div class="toolbar">
+      <div class="search-wrap">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="searchSpeakers" placeholder="Search speakers…" oninput="renderSpeakers()">
+      </div>
+      <button class="btn-primary" onclick="openNewSpeakerModal()">+ New Speaker</button>
+    </div>
+    <div class="speakers-grid" id="speakersGrid"></div>
+    <div class="empty-state" id="emptySpeakers" style="display:none">
+      <div class="empty-icon">👤</div>
+      <p>No speakers yet. Click <strong>+ New Speaker</strong> to add one.</p>
+    </div>
+  </section>
+
+  <!-- ══ VIEW: EMAIL ══════════════════════════════════════════════ -->
+  <section class="view" id="view-email">
+    <div class="email-layout">
+      <div class="card email-config">
+        <div class="card-header"><h2>Email Configuration</h2></div>
+        <div class="form-group">
+          <label>CA Team Email</label>
+          <input type="email" id="caEmail" placeholder="corporate.access@company.com">
+        </div>
+        <div class="form-group">
+          <label>Filter Statuses to Include</label>
+          <div class="checkbox-group" id="emailStatusFilter"></div>
+        </div>
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input type="checkbox" id="resetFUP" checked>
+            <span>Reset F-UP Needed → Requested after sending</span>
+          </label>
+          <label class="checkbox-label">
+            <input type="checkbox" id="resetRegistered" checked>
+            <span>Set Requested Date for Registered events too</span>
+          </label>
+        </div>
+        <button class="btn-primary btn-full" onclick="generateEmail()">Generate Email Preview</button>
+      </div>
+      <div class="card email-preview-card">
+        <div class="card-header">
+          <h2>Email Preview</h2>
+          <button class="btn-ghost" onclick="copyEmailHTML()">Copy HTML</button>
+        </div>
+        <div class="email-preview" id="emailPreview">
+          <div class="email-placeholder">Configure filters and click <strong>Generate Email Preview</strong></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ══ MODAL: EVENT ═════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="eventModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modalTitle">New Event</h3>
+      <button class="modal-close" onclick="closeModal('eventModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="eventId">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Event Name <span class="req">*</span></label>
+          <input type="text" id="eventName" placeholder="e.g. Management Day — AGRO3">
+        </div>
+        <div class="form-group">
+          <label>Sector</label>
+          <select id="eventSector">
+            <option value="">— Select —</option>
+            <option>Agribusiness</option>
+            <option>Food</option>
+            <option>Beverage</option>
+            <option>F&amp;B</option>
+            <option>Agri F&amp;B</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Speaker</label>
+          <input type="text" id="eventSpeaker" placeholder="Speaker name" list="speakersList">
+          <datalist id="speakersList"></datalist>
+        </div>
+        <div class="form-group">
+          <label>Requested Date</label>
+          <input type="date" id="eventRequestedDate">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Last F-UP Date</label>
+          <input type="date" id="eventFupDate">
+        </div>
+        <div class="form-group">
+          <label>Scheduled Date</label>
+          <input type="date" id="eventScheduledDate">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Observations</label>
+        <textarea id="eventObs" rows="2" placeholder="Notes, cancellation reason, etc."></textarea>
+      </div>
+      <div class="form-group" id="canceledToggleWrap">
+        <label class="checkbox-label">
+          <input type="checkbox" id="eventCanceled">
+          <span>Mark as Canceled</span>
+        </label>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeModal('eventModal')">Cancel</button>
+      <button class="btn-primary" onclick="saveEvent()">Save Event</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: SPEAKER ═══════════════════════════════════════════════ -->
+<div class="modal-overlay" id="speakerModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="speakerModalTitle">New Speaker</h3>
+      <button class="modal-close" onclick="closeModal('speakerModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="speakerId">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Full Name <span class="req">*</span></label>
+          <input type="text" id="speakerName" placeholder="John Smith">
+        </div>
+        <div class="form-group">
+          <label>Company / Fund</label>
+          <input type="text" id="speakerCompany" placeholder="Company name">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Sector</label>
+          <select id="speakerSector">
+            <option value="">— Select —</option>
+            <option>Agribusiness</option>
+            <option>Food</option>
+            <option>Beverage</option>
+            <option>F&amp;B</option>
+            <option>Agri F&amp;B</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="speakerEmail" placeholder="john@company.com">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeModal('speakerModal')">Cancel</button>
+      <button class="btn-primary" onclick="saveSpeaker()">Save Speaker</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TOAST ═════════════════════════════════════════════════════ -->
+<div class="toast" id="toast"></div>
+
+<script src="app.js"></script>
+</body>
+</html>

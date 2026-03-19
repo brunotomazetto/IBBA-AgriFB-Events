@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════
-   Event Tracker CRM — app.js v4
-   Supabase real-time · login · ratings · sort/filter
+   Event Tracker CRM — app.js v5
+   Supabase real-time · cloud users · ratings · sort/filter
 ═══════════════════════════════════════════════════════════════ */
 
 // ── Supabase client ─────────────────────────────────────────────
@@ -18,10 +18,7 @@ function initSupabase() {
   try {
     _supabase = window.supabase.createClient(url, key);
     return true;
-  } catch (e) {
-    console.error('Supabase init error:', e);
-    return false;
-  }
+  } catch (e) { console.error('Supabase init error:', e); return false; }
 }
 function isOnline() { return !!_supabase; }
 
@@ -33,25 +30,71 @@ async function sha256(str) {
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
 }
 
-// Users stored locally (auth is local — Supabase stores events/speakers only)
-function getUsers() {
+// ── User helpers: Supabase first, localStorage fallback ──────────
+function getLocalUsers() {
   try { return JSON.parse(localStorage.getItem('crm_users')) || []; } catch { return []; }
 }
-function saveUsers(u) { localStorage.setItem('crm_users', JSON.stringify(u)); }
+function saveLocalUsers(u) { localStorage.setItem('crm_users', JSON.stringify(u)); }
 
-async function seedAdminIfNeeded() {
-  if (!getUsers().length) {
-    saveUsers([{ username:'admin', displayName:'Bruno Tomazetto', initials:'BT', role:'admin', passwordHash: await sha256('admin123') }]);
+async function getAllUsers() {
+  // Always try Supabase first so users are shared across browsers
+  if (isOnline()) {
+    const { data, error } = await _supabase.from('users').select('*');
+    if (!error && data?.length) {
+      // Cache locally as fallback
+      const mapped = data.map(r => ({
+        username: r.username, displayName: r.display_name,
+        initials: r.initials, role: r.role, passwordHash: r.password_hash
+      }));
+      saveLocalUsers(mapped);
+      return mapped;
+    }
+  }
+  return getLocalUsers();
+}
+
+async function saveUserToDb(user) {
+  // Always save locally
+  const locals = getLocalUsers();
+  const idx = locals.findIndex(u => u.username === user.username);
+  if (idx >= 0) locals[idx] = user; else locals.push(user);
+  saveLocalUsers(locals);
+  // Also save to Supabase if online
+  if (isOnline()) {
+    const row = { username: user.username, display_name: user.displayName, initials: user.initials, role: user.role, password_hash: user.passwordHash };
+    const { error } = await _supabase.from('users').upsert(row, { onConflict: 'username' });
+    if (error) console.error('Save user error:', error);
   }
 }
+
+async function deleteUserFromDb(username) {
+  saveLocalUsers(getLocalUsers().filter(u => u.username !== username));
+  if (isOnline()) {
+    const { error } = await _supabase.from('users').delete().eq('username', username);
+    if (error) console.error('Delete user error:', error);
+  }
+}
+
+async function seedAdminIfNeeded() {
+  // Only seed if no users exist anywhere
+  const users = await getAllUsers();
+  if (!users.length) {
+    const admin = { username:'admin', displayName:'Bruno Tomazetto', initials:'BT', role:'admin', passwordHash: await sha256('admin123') };
+    await saveUserToDb(admin);
+  }
+}
+
 async function tryLogin(username, password) {
-  const user = getUsers().find(u => u.username.toLowerCase() === username.toLowerCase());
+  const users = await getAllUsers();
+  const user  = users.find(u => u.username.toLowerCase() === username.toLowerCase());
   if (!user || await sha256(password) !== user.passwordHash) return false;
   currentUser = user;
   sessionStorage.setItem('crm_session', JSON.stringify(user));
   return true;
 }
+
 function logout() { currentUser = null; sessionStorage.removeItem('crm_session'); showLoginScreen(); }
+
 function restoreSession() {
   try { const s = sessionStorage.getItem('crm_session'); if (s) { currentUser = JSON.parse(s); return true; } } catch {}
   return false;
@@ -569,14 +612,25 @@ function renderSettings(){
   document.getElementById('cfg-name').value=currentUser.displayName||cfg.name;document.getElementById('cfg-initials').value=currentUser.initials||cfg.initials;document.getElementById('cfg-sla').value=cfg.sla;document.getElementById('cfg-to').value=cfg.to||'';document.getElementById('cfg-cc').value=cfg.cc||'';document.getElementById('cfg-subject').value=cfg.subject;document.getElementById('cfg-opening').value=cfg.opening;document.getElementById('cfg-closing').value=cfg.closing;document.getElementById('cfg-signature').value=cfg.signature;
   document.getElementById('cfg-defaultStatuses').innerHTML=STATUSES.map(s=>`<label class="chk-label"><input type="checkbox" name="cfgStat" value="${s}" ${cfg.defaultStatuses.includes(s)?'checked':''}><span>${s}</span></label>`).join('');
 }
-function saveSettings(){
+async function saveSettings(){
   cfg.sla=parseInt(document.getElementById('cfg-sla').value)||7;cfg.to=document.getElementById('cfg-to').value.trim();cfg.cc=document.getElementById('cfg-cc').value.trim();cfg.subject=document.getElementById('cfg-subject').value.trim()||CFG_DEFAULTS.subject;cfg.opening=document.getElementById('cfg-opening').value.trim()||CFG_DEFAULTS.opening;cfg.closing=document.getElementById('cfg-closing').value.trim()||CFG_DEFAULTS.closing;cfg.signature=document.getElementById('cfg-signature').value.trim()||CFG_DEFAULTS.signature;cfg.defaultStatuses=[...document.querySelectorAll('input[name=cfgStat]:checked')].map(c=>c.value);
-  const users=getUsers();const idx=users.findIndex(u=>u.username===currentUser.username);
-  if(idx>=0){users[idx].displayName=document.getElementById('cfg-name').value.trim()||users[idx].displayName;users[idx].initials=document.getElementById('cfg-initials').value.trim().toUpperCase().slice(0,2)||users[idx].initials;currentUser=users[idx];saveUsers(users);sessionStorage.setItem('crm_session',JSON.stringify(currentUser));}
+  const users=await getAllUsers();const idx=users.findIndex(u=>u.username===currentUser.username);
+  if(idx>=0){users[idx].displayName=document.getElementById('cfg-name').value.trim()||users[idx].displayName;users[idx].initials=document.getElementById('cfg-initials').value.trim().toUpperCase().slice(0,2)||users[idx].initials;currentUser=users[idx];await saveUserToDb(currentUser);sessionStorage.setItem('crm_session',JSON.stringify(currentUser));}
   saveLocal();document.getElementById('userAvatarBtn').textContent=currentUser.initials;toast('Settings saved.','ok');
 }
 function resetEmailTemplate(){document.getElementById('cfg-subject').value=CFG_DEFAULTS.subject;document.getElementById('cfg-opening').value=CFG_DEFAULTS.opening;document.getElementById('cfg-closing').value=CFG_DEFAULTS.closing;document.getElementById('cfg-signature').value=CFG_DEFAULTS.signature;toast('Template reset.','ok');}
-async function changePassword(){const cur=document.getElementById('pw-current').value;const neu=document.getElementById('pw-new').value;const conf=document.getElementById('pw-confirm').value;if(!cur||!neu){toast('Fill current and new password.','err');return;}if(neu!==conf){toast('Passwords do not match.','err');return;}if(neu.length<6){toast('Min 6 characters.','err');return;}const users=getUsers();const idx=users.findIndex(u=>u.username===currentUser.username);if(await sha256(cur)!==users[idx].passwordHash){toast('Current password is incorrect.','err');return;}users[idx].passwordHash=await sha256(neu);saveUsers(users);['pw-current','pw-new','pw-confirm'].forEach(id=>document.getElementById(id).value='');toast('Password changed.','ok');}
+async function changePassword(){
+  const cur=document.getElementById('pw-current').value;const neu=document.getElementById('pw-new').value;const conf=document.getElementById('pw-confirm').value;
+  if(!cur||!neu){toast('Fill current and new password.','err');return;}
+  if(neu!==conf){toast('Passwords do not match.','err');return;}
+  if(neu.length<6){toast('Min 6 characters.','err');return;}
+  const users=await getAllUsers();const idx=users.findIndex(u=>u.username===currentUser.username);
+  if(await sha256(cur)!==users[idx].passwordHash){toast('Current password is incorrect.','err');return;}
+  users[idx].passwordHash=await sha256(neu);
+  await saveUserToDb(users[idx]);
+  ['pw-current','pw-new','pw-confirm'].forEach(id=>document.getElementById(id).value='');
+  toast('Password changed.','ok');
+}
 
 // ── Supabase Connect page ────────────────────────────────────────
 function renderConnect(){
@@ -611,18 +665,30 @@ function disconnectSupabase(){
 }
 
 // ── Users ────────────────────────────────────────────────────────
-function renderUsers(){
-  document.getElementById('userTableBody').innerHTML=getUsers().map(u=>`<tr><td>${u.username}</td><td>${u.displayName}</td><td>${u.initials}</td><td><span class="pill ${u.role==='admin'?'p-Requested':'p-Registered'}">${u.role}</span></td><td><div class="row-act">${u.username!==currentUser.username?`<button class="btn-ico del" onclick="deleteUser('${u.username}')"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg></button>`:'<span style="color:var(--text-xs);font-size:11px">you</span>'}</div></td></tr>`).join('');
+async function renderUsers(){
+  const users = await getAllUsers();
+  document.getElementById('userTableBody').innerHTML=users.map(u=>`<tr><td>${u.username}</td><td>${u.displayName}</td><td>${u.initials}</td><td><span class="pill ${u.role==='admin'?'p-Requested':'p-Registered'}">${u.role}</span></td><td><div class="row-act">${u.username!==currentUser.username?`<button class="btn-ico del" onclick="deleteUser('${u.username}')"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg></button>`:'<span style="color:var(--text-xs);font-size:11px">you</span>'}</div></td></tr>`).join('');
 }
 async function addUser(){
-  const uname=document.getElementById('new-username').value.trim();const dname=document.getElementById('new-displayname').value.trim();const init=document.getElementById('new-initials').value.trim().toUpperCase().slice(0,2);const pass=document.getElementById('new-password').value;const role=document.getElementById('new-role').value;
+  const uname=document.getElementById('new-username').value.trim();
+  const dname=document.getElementById('new-displayname').value.trim();
+  const init=document.getElementById('new-initials').value.trim().toUpperCase().slice(0,2);
+  const pass=document.getElementById('new-password').value;
+  const role=document.getElementById('new-role').value;
   if(!uname||!pass||!dname){toast('Fill all required fields.','err');return;}
-  const users=getUsers();if(users.find(u=>u.username.toLowerCase()===uname.toLowerCase())){toast('Username already exists.','err');return;}
-  users.push({username:uname,displayName:dname,initials:init||uname.slice(0,2).toUpperCase(),role,passwordHash:await sha256(pass)});
-  saveUsers(users);['new-username','new-displayname','new-initials','new-password'].forEach(id=>document.getElementById(id).value='');document.getElementById('new-role').value='user';
+  const users=await getAllUsers();
+  if(users.find(u=>u.username.toLowerCase()===uname.toLowerCase())){toast('Username already exists.','err');return;}
+  const newUser={username:uname,displayName:dname,initials:init||uname.slice(0,2).toUpperCase(),role,passwordHash:await sha256(pass)};
+  await saveUserToDb(newUser);
+  ['new-username','new-displayname','new-initials','new-password'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('new-role').value='user';
   renderUsers();toast(`User "${uname}" created.`,'ok');
 }
-function deleteUser(username){if(!confirm(`Delete user "${username}"?`))return;saveUsers(getUsers().filter(u=>u.username!==username));renderUsers();toast(`User deleted.`,'ok');}
+async function deleteUser(username){
+  if(!confirm(`Delete user "${username}"?`))return;
+  await deleteUserFromDb(username);
+  renderUsers();toast(`User deleted.`,'ok');
+}
 
 // ── Import / Export ──────────────────────────────────────────────
 function exportData(){const blob=new Blob([JSON.stringify({events,speakers,cfg,exportedAt:new Date().toISOString()},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`event-tracker-${isoToday()}.json`;a.click();toast('Exported.','ok');}

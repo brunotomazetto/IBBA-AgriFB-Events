@@ -6,33 +6,27 @@
 <title>Itaú BBA · Event Tracker</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<!-- Supabase JS SDK -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
   --black:#1a1a1a;--orange:#F15A22;--orange-h:#d94e1a;--orange-l:#fff0eb;
-  --white:#ffffff;--bg:#f5f5f5;--bg2:#ebebeb;--border:#e0e0e0;
+  --white:#fff;--bg:#f5f5f5;--bg2:#ebebeb;--border:#e0e0e0;
   --text:#1a1a1a;--text-s:#666;--text-xs:#999;
   --st-reg-c:#2e7d32;--st-reg-b:#e8f5e9;--st-req-c:#1565c0;--st-req-b:#e3f2fd;
   --st-fup-c:#e65100;--st-fup-b:#fff3e0;--st-sch-c:#6a1b9a;--st-sch-b:#f3e5f5;
   --st-con-c:#37474f;--st-con-b:#eceff1;--st-can-c:#b71c1c;--st-can-b:#ffebee;
-  --nav-h:56px;--sub-h:44px;--r:6px;--shadow:0 1px 4px rgba(0,0,0,.1);--shadow-m:0 4px 16px rgba(0,0,0,.12);
+  --nav-h:56px;--sub-h:44px;--r:6px;
+  --shadow:0 1px 4px rgba(0,0,0,.1);--shadow-m:0 4px 16px rgba(0,0,0,.12);
 }
 html{font-size:14px}
 body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
-button{font-family:inherit;cursor:pointer}
-input,select,textarea{font-family:inherit}
+button{font-family:inherit;cursor:pointer}input,select,textarea{font-family:inherit}
 
-/* ── LOGIN SCREEN ─────────────────────────────────────────── */
-#loginScreen{
-  display:none;min-height:100vh;
-  align-items:center;justify-content:center;
-  background:var(--black);
-}
-.login-box{
-  background:var(--white);border-radius:10px;
-  width:min(400px,94vw);padding:40px 36px;
-  box-shadow:0 24px 64px rgba(0,0,0,.4);
-}
+/* ── LOGIN ───────────────────────────────────────────────── */
+#loginScreen{display:none;min-height:100vh;align-items:center;justify-content:center;background:var(--black)}
+.login-box{background:var(--white);border-radius:10px;width:min(400px,94vw);padding:40px 36px;box-shadow:0 24px 64px rgba(0,0,0,.4)}
 .login-brand{display:flex;align-items:center;gap:10px;margin-bottom:28px}
 .login-logo{background:var(--orange);color:var(--white);font-weight:700;font-size:14px;padding:6px 12px;border-radius:4px;letter-spacing:.5px}
 .login-logo span{font-size:11px;opacity:.8;font-weight:400}
@@ -46,11 +40,11 @@ input,select,textarea{font-family:inherit}
 .login-err{color:#b71c1c;font-size:12px;margin-bottom:10px;min-height:18px}
 .login-btn{width:100%;padding:11px;background:var(--orange);color:var(--white);border:none;border-radius:5px;font-size:14px;font-weight:600;cursor:pointer;transition:background .15s}
 .login-btn:hover{background:var(--orange-h)}
-.login-hint{font-size:11px;color:var(--text-xs);text-align:center;margin-top:16px}
+.login-hint{font-size:11px;color:var(--text-xs);text-align:center;margin-top:14px}
 
 /* ── TOP NAV ─────────────────────────────────────────────── */
-.topnav{height:var(--nav-h);background:var(--black);display:flex;align-items:center;justify-content:space-between;padding:0 32px;position:sticky;top:0;z-index:200;}
-.topnav-left{display:flex;align-items:center;gap:32px}
+.topnav{height:var(--nav-h);background:var(--black);display:flex;align-items:center;justify-content:space-between;padding:0 32px;position:sticky;top:0;z-index:200}
+.topnav-left{display:flex;align-items:center;gap:28px}
 .brand-logo{background:var(--orange);color:var(--white);font-weight:700;font-size:13px;letter-spacing:.5px;padding:5px 10px;border-radius:3px;display:flex;align-items:center;gap:5px}
 .brand-logo span{font-size:10px;opacity:.8;font-weight:400}
 .nav-links{display:flex;gap:4px}
@@ -58,7 +52,16 @@ input,select,textarea{font-family:inherit}
 .nav-link:hover{color:var(--white);background:rgba(255,255,255,.08)}
 .nav-link.active{color:var(--white);border-bottom:2px solid var(--orange);border-radius:0;padding-bottom:4px}
 .topnav-right{display:flex;align-items:center;gap:12px}
-.search-bar{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:20px;padding:5px 14px;width:220px;transition:all .2s}
+
+/* sync indicator */
+.sync-indicator{display:flex;align-items:center;gap:6px;font-size:12px;color:#aaa}
+.sync-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.sync-dot.online{background:#4caf50}
+.sync-dot.offline{background:#e65100}
+@keyframes syncPulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.6);opacity:.6}}
+.sync-dot.pulse{animation:syncPulse .6s ease 2}
+
+.search-bar{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:20px;padding:5px 14px;width:200px;transition:all .2s}
 .search-bar:focus-within{background:rgba(255,255,255,.15)}
 .search-bar svg{width:14px;height:14px;stroke:#999;fill:none;stroke-width:2;flex-shrink:0}
 .search-bar input{background:none;border:none;outline:none;color:var(--white);font-size:12px;width:100%}
@@ -88,22 +91,21 @@ input,select,textarea{font-family:inherit}
 .page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px}
 .page-title{font-size:22px;font-weight:700}
 .page-sub{font-size:13px;color:var(--text-s);margin-top:2px}
-.greeting{margin-bottom:24px}
-.greeting h1{font-size:22px;font-weight:600}
+.greeting{margin-bottom:24px}.greeting h1{font-size:22px;font-weight:600}
 .greeting p{font-size:13px;color:var(--text-s);margin-top:3px}
 
 /* ── Quick grid ──────────────────────────────────────────── */
-.quick-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:1px;background:var(--border);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:28px}
-.quick-card{background:var(--white);padding:18px 16px;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;transition:background .15s;text-align:center}
+.quick-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:1px;background:var(--border);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:28px}
+.quick-card{background:var(--white);padding:16px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;transition:background .15s;text-align:center}
 .quick-card:hover{background:#fafafa}
 .quick-card.active-card{background:var(--orange-l)}
-.quick-icon{width:36px;height:36px;border-radius:8px;display:grid;place-items:center}
-.quick-icon svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8}
-.quick-label{font-size:12px;font-weight:500;color:var(--text-s);line-height:1.3}
-.quick-count{font-size:20px;font-weight:700;color:var(--text);line-height:1}
+.quick-icon{width:34px;height:34px;border-radius:8px;display:grid;place-items:center}
+.quick-icon svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.8}
+.quick-label{font-size:11px;font-weight:500;color:var(--text-s);line-height:1.3}
+.quick-count{font-size:20px;font-weight:700;line-height:1}
 
 /* ── Dash layout ─────────────────────────────────────────── */
-.dash-cols{display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:start}
+.dash-cols{display:grid;grid-template-columns:1fr 320px;gap:20px;align-items:start}
 .dash-main{display:flex;flex-direction:column;gap:20px}
 .card{background:var(--white);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
 .card-head{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border)}
@@ -114,7 +116,7 @@ input,select,textarea{font-family:inherit}
 .bar-track{flex:1;height:18px;background:var(--bg);border-radius:3px;overflow:hidden}
 .bar-fill{height:100%;border-radius:3px;transition:width .5s cubic-bezier(.4,0,.2,1);min-width:3px}
 .bar-num{font-size:12px;color:var(--text-s);width:22px;text-align:right;flex-shrink:0}
-.att-item{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--bg);cursor:pointer;transition:background .1s}
+.att-item{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--bg);cursor:pointer}
 .att-item:last-child{border-bottom:none}
 .att-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:5px}
 .att-name{font-size:13px;font-weight:500;line-height:1.3}
@@ -125,13 +127,19 @@ input,select,textarea{font-family:inherit}
 .badge-gray{background:var(--bg2);color:var(--text-s);font-size:11px;font-weight:600;padding:2px 7px;border-radius:10px}
 .mini-table{width:100%;border-collapse:collapse;font-size:13px}
 .mini-table th{text-align:left;padding:8px 10px;font-size:11px;font-weight:600;color:var(--text-xs);text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--border);background:var(--bg)}
-.mini-table td{padding:10px 10px;border-bottom:1px solid var(--bg2);vertical-align:middle}
+.mini-table td{padding:10px;border-bottom:1px solid var(--bg2);vertical-align:middle}
 .mini-table tr:last-child td{border-bottom:none}
 .mini-table tr:hover td{background:#fafafa;cursor:pointer}
 
-/* ── Toolbar ─────────────────────────────────────────────── */
-.toolbar{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
-.search-field{display:flex;align-items:center;gap:7px;background:var(--white);border:1px solid var(--border);border-radius:4px;padding:7px 11px;flex:1;max-width:300px;transition:border-color .15s}
+/* ── Toolbar & filter bar ────────────────────────────────── */
+.toolbar{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.filter-bar{display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap;padding:10px 14px;background:var(--white);border:1px solid var(--border);border-radius:var(--r)}
+.filter-bar-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text-xs);margin-right:4px}
+.sort-select{border:1px solid var(--border);border-radius:4px;padding:5px 10px;font-size:12px;outline:none;background:var(--white);color:var(--text);cursor:pointer}
+.sort-select:focus{border-color:var(--orange)}
+.sort-dir-btn{border:1px solid var(--border);border-radius:4px;padding:5px 10px;font-size:13px;background:var(--white);color:var(--text-s);transition:all .15s}
+.sort-dir-btn:hover{border-color:var(--orange);color:var(--orange)}
+.search-field{display:flex;align-items:center;gap:7px;background:var(--white);border:1px solid var(--border);border-radius:4px;padding:7px 11px;flex:1;max-width:280px;transition:border-color .15s}
 .search-field:focus-within{border-color:var(--orange)}
 .search-field svg{width:14px;height:14px;stroke:var(--text-xs);fill:none;stroke-width:2;flex-shrink:0}
 .search-field input{border:none;outline:none;font-size:13px;width:100%;background:none;color:var(--text)}
@@ -150,7 +158,9 @@ input,select,textarea{font-family:inherit}
 /* ── Table ───────────────────────────────────────────────── */
 .tbl-wrap{background:var(--white);border:1px solid var(--border);border-radius:var(--r);overflow-x:auto}
 .dtbl{width:100%;border-collapse:collapse;font-size:13px}
-.dtbl th{text-align:left;padding:10px 12px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--text-xs);background:var(--bg);border-bottom:1px solid var(--border);white-space:nowrap;position:sticky;top:0}
+.dtbl th{text-align:left;padding:10px 12px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--text-xs);background:var(--bg);border-bottom:1px solid var(--border);white-space:nowrap}
+.dtbl th.sortable{cursor:pointer;user-select:none;transition:background .1s}
+.dtbl th.sortable:hover{background:var(--bg2);color:var(--text)}
 .dtbl td{padding:10px 12px;border-bottom:1px solid var(--bg2);vertical-align:middle}
 .dtbl tr:last-child td{border-bottom:none}
 .dtbl tr:hover td{background:#fafafa}
@@ -170,12 +180,10 @@ input,select,textarea{font-family:inherit}
 .stars{display:flex;gap:1px;cursor:pointer}
 .star{color:#ddd;font-size:15px;transition:color .1s;line-height:1;user-select:none}
 .star.on{color:var(--orange)}
-.star.hover{color:#ffb74d}
-.stars:hover .star{color:#ffb74d}
-.stars:hover .star.on{color:var(--orange)}
+.star.hover,.stars:hover .star{color:#ffb74d}
+.star.on{color:var(--orange)}
 .star-btn{background:none;border:none;font-size:20px;cursor:pointer;color:#ddd;padding:0 1px;line-height:1;transition:color .1s}
 .star-btn.on{color:var(--orange)}
-.star-btn:hover,.star-row:hover .star-btn{color:#ffb74d}
 .star-row{display:flex;gap:2px;margin-top:4px}
 
 /* ── Pill ────────────────────────────────────────────────── */
@@ -188,7 +196,7 @@ input,select,textarea{font-family:inherit}
 .p-Canceled{background:var(--st-can-b);color:var(--st-can-c)}
 
 /* ── Speakers ────────────────────────────────────────────── */
-.spk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.spk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
 .spk-card{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:8px;transition:box-shadow .15s}
 .spk-card:hover{box-shadow:var(--shadow-m)}
 .spk-top{display:flex;align-items:center;gap:10px}
@@ -199,12 +207,21 @@ input,select,textarea{font-family:inherit}
 .spk-acts{display:flex;gap:6px;margin-top:2px}
 
 /* ── Email ───────────────────────────────────────────────── */
-.email-layout{display:grid;grid-template-columns:300px 1fr;gap:18px;align-items:start}
+.email-layout{display:grid;grid-template-columns:290px 1fr;gap:18px;align-items:start}
 
-/* ── Settings ────────────────────────────────────────────── */
+/* ── Settings / Connect ──────────────────────────────────── */
 .settings-layout{display:grid;grid-template-columns:1fr 1fr;gap:20px}
 .settings-section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-xs);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border);margin-top:16px}
 .settings-section-title:first-child{margin-top:0}
+.connect-box{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:24px;max-width:560px}
+.connect-step{display:flex;gap:14px;margin-bottom:20px;align-items:flex-start}
+.connect-num{width:26px;height:26px;border-radius:50%;background:var(--orange);color:var(--white);display:grid;place-items:center;font-size:12px;font-weight:700;flex-shrink:0;margin-top:2px}
+.connect-step-body h4{font-size:13px;font-weight:600;margin-bottom:4px}
+.connect-step-body p{font-size:12px;color:var(--text-s);line-height:1.5}
+.connect-step-body code{background:var(--bg2);padding:2px 6px;border-radius:3px;font-size:11px;font-family:monospace}
+.status-box{padding:12px 16px;border-radius:6px;font-size:13px;font-weight:500;margin-bottom:16px}
+.status-box.online{background:#e8f5e9;color:#2e7d32;border:1px solid #c8e6c9}
+.status-box.offline{background:#fff3e0;color:#e65100;border:1px solid #ffe0b2}
 
 /* ── Forms ───────────────────────────────────────────────── */
 .fg{display:flex;flex-direction:column;gap:4px;margin-bottom:12px}
@@ -221,18 +238,13 @@ input,select,textarea{font-family:inherit}
 /* ── Buttons ─────────────────────────────────────────────── */
 .btn{display:inline-flex;align-items:center;gap:6px;padding:7px 16px;border-radius:4px;font-size:13px;font-weight:500;border:none;cursor:pointer;transition:all .15s;font-family:inherit}
 .btn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;flex-shrink:0}
-.btn-orange{background:var(--orange);color:var(--white)}
-.btn-orange:hover{background:var(--orange-h)}
-.btn-black{background:var(--black);color:var(--white)}
-.btn-black:hover{background:#333}
-.btn-outline{background:var(--white);color:var(--text-s);border:1px solid var(--border)}
-.btn-outline:hover{border-color:var(--orange);color:var(--orange)}
-.btn-ghost{background:none;color:var(--text-s);border:1px solid var(--border)}
-.btn-ghost:hover{color:var(--text);border-color:#bbb}
+.btn-orange{background:var(--orange);color:var(--white)}.btn-orange:hover{background:var(--orange-h)}
+.btn-black{background:var(--black);color:var(--white)}.btn-black:hover{background:#333}
+.btn-outline{background:var(--white);color:var(--text-s);border:1px solid var(--border)}.btn-outline:hover{border-color:var(--orange);color:var(--orange)}
+.btn-ghost{background:none;color:var(--text-s);border:1px solid var(--border)}.btn-ghost:hover{color:var(--text);border-color:#bbb}
 .btn-full{width:100%;justify-content:center;padding:9px}
 .btn-sm{padding:5px 11px;font-size:12px}
-.btn-danger{background:#ffebee;color:#b71c1c;border:1px solid #ffcdd2}
-.btn-danger:hover{background:#ffcdd2}
+.btn-danger{background:#ffebee;color:#b71c1c;border:1px solid #ffcdd2}.btn-danger:hover{background:#ffcdd2}
 
 /* ── Modal ───────────────────────────────────────────────── */
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);backdrop-filter:blur(2px);z-index:500;display:none;place-items:center}
@@ -246,12 +258,10 @@ input,select,textarea{font-family:inherit}
 .modal-body{padding:18px 20px}
 .modal-foot{display:flex;justify-content:flex-end;gap:8px;padding:12px 20px;border-top:1px solid var(--border)}
 
-/* ── Empty ───────────────────────────────────────────────── */
+/* ── Empty / Toast ───────────────────────────────────────── */
 .empty{text-align:center;padding:48px 20px;color:var(--text-s)}
 .empty-icon{font-size:36px;margin-bottom:10px}
 .empty p{font-size:13px}
-
-/* ── Toast ───────────────────────────────────────────────── */
 .toast{position:fixed;bottom:22px;right:22px;background:var(--black);color:var(--white);padding:10px 16px;border-radius:5px;font-size:13px;box-shadow:var(--shadow-m);z-index:999;transform:translateY(60px);opacity:0;pointer-events:none;transition:all .2s cubic-bezier(.4,0,.2,1)}
 .toast.show{transform:none;opacity:1}
 .toast.ok{border-left:3px solid #4caf50}
@@ -259,13 +269,13 @@ input,select,textarea{font-family:inherit}
 
 /* ── Responsive ──────────────────────────────────────────── */
 ::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:10px}
-@media(max-width:900px){.dash-cols,.email-layout,.settings-layout{grid-template-columns:1fr}.fr{grid-template-columns:1fr}.topnav{padding:0 16px}.subnav{padding:0 16px}.page{padding:20px 16px}}
-@media(max-width:600px){.quick-grid{grid-template-columns:repeat(3,1fr)}.nav-links,.search-bar{display:none}}
+@media(max-width:960px){.dash-cols,.email-layout,.settings-layout{grid-template-columns:1fr}.fr{grid-template-columns:1fr}.topnav{padding:0 16px}.subnav{padding:0 16px}.page{padding:20px 16px}}
+@media(max-width:600px){.quick-grid{grid-template-columns:repeat(4,1fr)}.nav-links,.search-bar{display:none}}
 </style>
 </head>
 <body>
 
-<!-- ══ LOGIN SCREEN ════════════════════════════════════════════ -->
+<!-- ══ LOGIN ═══════════════════════════════════════════════════ -->
 <div id="loginScreen">
   <div class="login-box">
     <div class="login-brand">
@@ -274,18 +284,17 @@ input,select,textarea{font-family:inherit}
     </div>
     <div class="login-title">Event Tracker</div>
     <div class="login-sub">Sign in to access the Corporate Access CRM</div>
-    <div class="login-fg"><label>Username</label><input type="text" id="loginUser" placeholder="username" autocomplete="username"></div>
-    <div class="login-fg"><label>Password</label><input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password"></div>
+    <div class="login-fg"><label>Username</label><input type="text" id="loginUser" autocomplete="username"></div>
+    <div class="login-fg"><label>Password</label><input type="password" id="loginPass" autocomplete="current-password"></div>
     <div class="login-err" id="loginErr"></div>
     <button class="login-btn" id="loginBtn" onclick="handleLogin()">Sign In</button>
-    <div class="login-hint">Default credentials: admin / admin123</div>
+    <div class="login-hint">Default: admin / admin123 — change after first login</div>
   </div>
 </div>
 
 <!-- ══ APP ═════════════════════════════════════════════════════ -->
 <div id="app" style="display:none">
 
-<!-- TOP NAV -->
 <nav class="topnav">
   <div class="topnav-left">
     <div class="brand-logo">itaú<span>BBA</span></div>
@@ -295,6 +304,9 @@ input,select,textarea{font-family:inherit}
     </div>
   </div>
   <div class="topnav-right">
+    <div class="sync-indicator" id="syncStatus">
+      <span class="sync-dot offline"></span><span>Local only</span>
+    </div>
     <div class="search-bar">
       <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       <input type="text" placeholder="Search anything" oninput="handleGlobalSearch(this.value)">
@@ -303,20 +315,17 @@ input,select,textarea{font-family:inherit}
       <div class="user-avatar" id="userAvatarBtn" onclick="toggleUserMenu()">BT</div>
       <div class="user-dropdown" id="userDropdown">
         <div class="user-dd-item" onclick="setPage('settings');closeUserMenu()">
-          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
-          Settings
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>Settings
         </div>
         <div class="user-dd-sep"></div>
         <div class="user-dd-item danger" onclick="logout()">
-          <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-          Sign Out
+          <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Sign Out
         </div>
       </div>
     </div>
   </div>
 </nav>
 
-<!-- SUB NAV -->
 <div class="subnav">
   <button class="subnav-btn active" id="snav-dashboard" onclick="setPage('dashboard')">
     <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Dashboard
@@ -329,6 +338,9 @@ input,select,textarea{font-family:inherit}
   </button>
   <button class="subnav-btn" id="snav-email" onclick="setPage('email')">
     <svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="2,4 12,13 22,4"/></svg>Send Email
+  </button>
+  <button class="subnav-btn" id="snav-connect" onclick="setPage('connect')">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="4.22" y1="4.22" x2="7.05" y2="7.05"/><line x1="16.95" y1="16.95" x2="19.78" y2="19.78"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/><line x1="4.22" y1="19.78" x2="7.05" y2="16.95"/><line x1="16.95" y1="7.05" x2="19.78" y2="4.22"/></svg>Connect
   </button>
   <button class="subnav-btn" id="snav-settings" onclick="setPage('settings')">
     <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>Settings
@@ -362,15 +374,9 @@ input,select,textarea{font-family:inherit}
         <table class="mini-table"><thead><tr><th>ID</th><th>Event</th><th>Speaker</th><th>Status</th><th>SLA</th><th>Pre-Call</th><th>Call</th></tr></thead><tbody id="recentBody"></tbody></table>
       </div>
     </div>
-    <div class="dash-side">
-      <div class="side-card">
-        <div class="side-card-head">F-UP Needed<span class="badge-orange" id="fupBadge">0</span></div>
-        <div id="fupList" style="padding:0 16px 8px"></div>
-      </div>
-      <div class="side-card">
-        <div class="side-card-head">Upcoming Scheduled<span class="badge-gray" id="schedBadge">0</span></div>
-        <div id="schedList" style="padding:0 16px 8px"></div>
-      </div>
+    <div>
+      <div class="side-card"><div class="side-card-head">F-UP Needed<span class="badge-orange" id="fupBadge">0</span></div><div id="fupList" style="padding:0 16px 8px"></div></div>
+      <div class="side-card"><div class="side-card-head">Upcoming Scheduled<span class="badge-gray" id="schedBadge">0</span></div><div id="schedList" style="padding:0 16px 8px"></div></div>
     </div>
   </div>
 </div>
@@ -381,13 +387,52 @@ input,select,textarea{font-family:inherit}
     <div><div class="page-title">Events</div><div class="page-sub">Track and manage all Corporate Access events</div></div>
     <button class="btn btn-orange" onclick="openNewEvent()"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>New Event</button>
   </div>
-  <div class="toolbar">
-    <div class="search-field"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" id="evtSearch" placeholder="Search events…" oninput="renderEvents()"></div>
+  <!-- Filter bar -->
+  <div class="filter-bar">
+    <span class="filter-bar-label">Sort by</span>
+    <select class="sort-select" id="sortFieldSelect" onchange="onSortFieldChange(this.value)">
+      <option value="registeredDate">Registered Date</option>
+      <option value="requestedDate">Requested Date</option>
+      <option value="scheduledDate">Scheduled Date</option>
+      <option value="status">Status</option>
+      <option value="name">Event Name</option>
+      <option value="speaker">Speaker</option>
+      <option value="sector">Sector</option>
+      <option value="sla">SLA (days)</option>
+      <option value="ratingPreCall">Pre-Call Rating</option>
+      <option value="ratingCall">Call Rating</option>
+    </select>
+    <button class="sort-dir-btn" id="sortDirBtn" onclick="toggleSortDir()">↓ Desc</button>
+    <div style="width:1px;height:20px;background:var(--border);margin:0 4px"></div>
+    <span class="filter-bar-label">Filter</span>
     <div class="chips" id="statusChips"></div>
+    <div style="margin-left:auto">
+      <div class="search-field">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="evtSearch" placeholder="Search events…" oninput="renderEvents()">
+      </div>
+    </div>
   </div>
   <div class="tbl-wrap">
-    <table class="dtbl"><thead><tr><th>ID</th><th>Event Name</th><th>Speaker</th><th>Sector</th><th>Status</th><th>Registered</th><th>Requested</th><th>Last F-UP</th><th>Scheduled</th><th>SLA</th><th>Pre-Call</th><th>Call</th><th>Observations</th><th></th></tr></thead><tbody id="evtBody"></tbody></table>
-    <div class="empty" id="evtEmpty" style="display:none"><div class="empty-icon">📋</div><p>No events found. Click <strong>New Event</strong> to start.</p></div>
+    <table class="dtbl">
+      <thead><tr>
+        <th class="sortable" data-sort="name" onclick="setSort('name')">Event Name<span class="sort-arrow"></span></th>
+        <th class="sortable" data-sort="speaker" onclick="setSort('speaker')">Speaker<span class="sort-arrow"></span></th>
+        <th class="sortable" data-sort="sector" onclick="setSort('sector')">Sector<span class="sort-arrow"></span></th>
+        <th class="sortable" data-sort="status" onclick="setSort('status')">Status<span class="sort-arrow"></span></th>
+        <th class="sortable" data-sort="registeredDate" onclick="setSort('registeredDate')">Registered<span class="sort-arrow"></span></th>
+        <th class="sortable" data-sort="requestedDate" onclick="setSort('requestedDate')">Requested<span class="sort-arrow"></span></th>
+        <th>Last F-UP</th>
+        <th class="sortable" data-sort="scheduledDate" onclick="setSort('scheduledDate')">Scheduled<span class="sort-arrow"></span></th>
+        <th class="sortable" data-sort="sla" onclick="setSort('sla')">SLA<span class="sort-arrow"></span></th>
+        <th class="sortable" data-sort="ratingPreCall" onclick="setSort('ratingPreCall')">Pre-Call<span class="sort-arrow"></span></th>
+        <th class="sortable" data-sort="ratingCall" onclick="setSort('ratingCall')">Call<span class="sort-arrow"></span></th>
+        <th>Observations</th>
+        <th></th>
+      </tr></thead>
+      <tbody id="evtBody"></tbody>
+    </table>
+    <div class="empty" id="evtEmpty" style="display:none"><div class="empty-icon">📋</div><p>No events found.</p></div>
   </div>
 </div>
 
@@ -407,80 +452,123 @@ input,select,textarea{font-family:inherit}
   <div class="page-header"><div><div class="page-title">Send Email</div><div class="page-sub">Generate status update for Corporate Access team</div></div></div>
   <div class="email-layout">
     <div>
-      <div class="card" style="margin-bottom:14px"><div class="card-head"><h2>Recipients</h2></div><div class="card-body"><div class="fg"><label>To (comma-separated)</label><input type="text" id="emailTo" placeholder="ca@itaubba.com"></div><div class="fg"><label>CC (optional)</label><input type="text" id="emailCc" placeholder="manager@itaubba.com"></div></div></div>
+      <div class="card" style="margin-bottom:14px"><div class="card-head"><h2>Recipients</h2></div><div class="card-body"><div class="fg"><label>To (comma-separated)</label><input type="text" id="emailTo"></div><div class="fg"><label>CC (optional)</label><input type="text" id="emailCc"></div></div></div>
       <div class="card" style="margin-bottom:14px"><div class="card-head"><h2>Filter Statuses</h2></div><div class="card-body"><div class="chk-group" id="emailStatusFilter"></div></div></div>
       <div class="card" style="margin-bottom:14px"><div class="card-head"><h2>After Sending</h2></div><div class="card-body"><label class="chk-label"><input type="checkbox" id="resetFUP" checked><span>Reset F-UP Needed → Requested</span></label><label class="chk-label" style="margin-top:6px"><input type="checkbox" id="resetReg" checked><span>Set Requested Date for Registered events</span></label></div></div>
       <button class="btn btn-orange btn-full" onclick="generateEmail()"><svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="2,4 12,13 22,4"/></svg>Generate Email Preview</button>
     </div>
-    <div class="card"><div class="card-head"><h2>Preview</h2><div style="display:flex;gap:6px"><button class="btn btn-ghost btn-sm" onclick="copyEmailHTML()">Copy HTML</button><button class="btn btn-black btn-sm" onclick="openMailto()">Open in Outlook</button></div></div><div style="padding:16px" id="emailPreviewWrap"><div style="color:var(--text-xs);text-align:center;padding:48px 0;font-size:13px">Configure filters and click <strong>Generate Email Preview</strong></div></div></div>
+    <div class="card"><div class="card-head"><h2>Preview</h2><div style="display:flex;gap:6px"><button class="btn btn-ghost btn-sm" onclick="copyEmailHTML()">Copy HTML</button><button class="btn btn-black btn-sm" onclick="openMailto()">Open in Outlook</button></div></div><div style="padding:16px" id="emailPreviewWrap"><div style="color:var(--text-xs);text-align:center;padding:48px 0;font-size:13px">Configure and click <strong>Generate Email Preview</strong></div></div></div>
+  </div>
+</div>
+
+<!-- ═══ CONNECT (Supabase) ═══════════════════════════════════════ -->
+<div class="page" id="page-connect">
+  <div class="page-header"><div><div class="page-title">Connect to Supabase</div><div class="page-sub">Enable real-time sync so all team members share the same data</div></div></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;max-width:960px">
+    <div>
+      <div class="connect-box" style="margin-bottom:16px">
+        <div id="sb-status" style="margin-bottom:16px;font-size:13px;font-weight:500"></div>
+        <div class="fg"><label>Supabase Project URL</label><input type="text" id="sb-url" placeholder="https://xxxxxxxxxxxx.supabase.co"></div>
+        <div class="fg"><label>Supabase Anon (public) Key</label><input type="text" id="sb-key" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."></div>
+        <div style="display:flex;gap:8px;margin-top:4px">
+          <button class="btn btn-orange" onclick="saveSupabase()"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6A19.79 19.79 0 012.12 4.18 2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>Connect</button>
+          <button class="btn btn-ghost" onclick="disconnectSupabase()">Disconnect</button>
+        </div>
+      </div>
+    </div>
+    <div class="connect-box">
+      <h3 style="font-size:15px;font-weight:700;margin-bottom:18px">Setup Guide</h3>
+      <div class="connect-step">
+        <div class="connect-num">1</div>
+        <div class="connect-step-body"><h4>Create a free Supabase account</h4><p>Go to <strong>supabase.com</strong> → Sign up → New Project. Choose a name and region close to you (e.g. South America).</p></div>
+      </div>
+      <div class="connect-step">
+        <div class="connect-num">2</div>
+        <div class="connect-step-body"><h4>Create the database tables</h4><p>In your Supabase project go to <strong>SQL Editor</strong> and run the query below:</p>
+          <div style="background:var(--black);color:#a8ff78;padding:12px;border-radius:6px;font-family:monospace;font-size:11px;margin-top:8px;line-height:1.7;overflow-x:auto">
+create table events (<br>
+&nbsp;&nbsp;id text primary key,<br>
+&nbsp;&nbsp;name text not null,<br>
+&nbsp;&nbsp;speaker text, sector text,<br>
+&nbsp;&nbsp;registered_date date,<br>
+&nbsp;&nbsp;requested_date date,<br>
+&nbsp;&nbsp;fup_date date,<br>
+&nbsp;&nbsp;scheduled_date date,<br>
+&nbsp;&nbsp;obs text,<br>
+&nbsp;&nbsp;canceled boolean default false,<br>
+&nbsp;&nbsp;rating_pre_call int default 0,<br>
+&nbsp;&nbsp;rating_call int default 0,<br>
+&nbsp;&nbsp;updated_at timestamptz default now()<br>
+);<br><br>
+create table speakers (<br>
+&nbsp;&nbsp;id text primary key,<br>
+&nbsp;&nbsp;name text not null,<br>
+&nbsp;&nbsp;company text, sector text, email text<br>
+);<br><br>
+alter table events enable row level security;<br>
+alter table speakers enable row level security;<br>
+create policy "allow all" on events for all using (true);<br>
+create policy "allow all" on speakers for all using (true);
+          </div>
+        </div>
+      </div>
+      <div class="connect-step">
+        <div class="connect-num">3</div>
+        <div class="connect-step-body"><h4>Copy your credentials</h4><p>Go to <strong>Project Settings → API</strong>. Copy the <em>Project URL</em> and the <em>anon public</em> key. Paste them in the form on the left.</p></div>
+      </div>
+      <div class="connect-step" style="margin-bottom:0">
+        <div class="connect-num">4</div>
+        <div class="connect-step-body"><h4>Share the dashboard link</h4><p>Send <code>https://brunotomazetto.github.io/IBBA-AgriFB-Events/</code> to your colleagues. Everyone connecting with their own login will see and edit the same data in real time.</p></div>
+      </div>
+    </div>
   </div>
 </div>
 
 <!-- ═══ SETTINGS ════════════════════════════════════════════════ -->
 <div class="page" id="page-settings">
-  <div class="page-header"><div><div class="page-title">Settings</div><div class="page-sub">Configure defaults, email template and preferences</div></div><button class="btn btn-orange" onclick="saveSettings()"><svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>Save Settings</button></div>
+  <div class="page-header"><div><div class="page-title">Settings</div><div class="page-sub">Configure defaults and email template</div></div><button class="btn btn-orange" onclick="saveSettings()"><svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>Save Settings</button></div>
   <div class="settings-layout">
     <div>
-      <div class="card">
-        <div class="card-head"><h2>General</h2></div>
-        <div class="card-body">
-          <div class="settings-section-title">My Profile</div>
-          <div class="fr"><div class="fg"><label>Display Name</label><input type="text" id="cfg-name" placeholder="Bruno Tomazetto"></div><div class="fg"><label>Initials (avatar)</label><input type="text" id="cfg-initials" placeholder="BT" maxlength="2"></div></div>
-          <div class="settings-section-title">Change Password</div>
-          <div class="fg"><label>Current Password</label><input type="password" id="pw-current" placeholder="••••••"></div>
-          <div class="fr"><div class="fg"><label>New Password</label><input type="password" id="pw-new" placeholder="••••••"></div><div class="fg"><label>Confirm</label><input type="password" id="pw-confirm" placeholder="••••••"></div></div>
-          <button class="btn btn-outline btn-sm" onclick="changePassword()">Change Password</button>
-          <div class="settings-section-title">Pipeline</div>
-          <div class="fg"><label>SLA Threshold (days before F-UP Needed)</label><input type="number" id="cfg-sla" value="7" min="1" max="30"></div>
-        </div>
-      </div>
-      <div class="card" style="margin-top:16px">
-        <div class="card-head"><h2>Default Recipients</h2></div>
-        <div class="card-body">
-          <div class="fg"><label>Default To</label><input type="text" id="cfg-to" placeholder="corporate.access@itaubba.com"></div>
-          <div class="fg"><label>Default CC</label><input type="text" id="cfg-cc" placeholder="manager@itaubba.com"></div>
-          <div class="settings-section-title">Default Statuses in Email</div>
-          <div class="chk-group" id="cfg-defaultStatuses"></div>
-        </div>
-      </div>
+      <div class="card"><div class="card-head"><h2>My Profile</h2></div><div class="card-body">
+        <div class="fr"><div class="fg"><label>Display Name</label><input type="text" id="cfg-name"></div><div class="fg"><label>Initials</label><input type="text" id="cfg-initials" maxlength="2"></div></div>
+        <div class="settings-section-title">Change Password</div>
+        <div class="fg"><label>Current Password</label><input type="password" id="pw-current"></div>
+        <div class="fr"><div class="fg"><label>New Password</label><input type="password" id="pw-new"></div><div class="fg"><label>Confirm</label><input type="password" id="pw-confirm"></div></div>
+        <button class="btn btn-outline btn-sm" onclick="changePassword()">Change Password</button>
+        <div class="settings-section-title">Pipeline</div>
+        <div class="fg"><label>SLA Threshold (days)</label><input type="number" id="cfg-sla" min="1" max="30"></div>
+      </div></div>
+      <div class="card" style="margin-top:16px"><div class="card-head"><h2>Default Recipients</h2></div><div class="card-body">
+        <div class="fg"><label>Default To</label><input type="text" id="cfg-to"></div>
+        <div class="fg"><label>Default CC</label><input type="text" id="cfg-cc"></div>
+        <div class="settings-section-title">Default Statuses in Email</div>
+        <div class="chk-group" id="cfg-defaultStatuses"></div>
+      </div></div>
     </div>
     <div>
-      <div class="card">
-        <div class="card-head"><h2>Email Template</h2></div>
-        <div class="card-body">
-          <div class="fg"><label>Subject (use {date} for today)</label><input type="text" id="cfg-subject"></div>
-          <div class="fg"><label>Opening paragraph (use {date})</label><textarea id="cfg-opening" rows="3"></textarea></div>
-          <div class="fg"><label>Closing paragraph</label><textarea id="cfg-closing" rows="2"></textarea></div>
-          <div class="fg"><label>Signature</label><textarea id="cfg-signature" rows="2"></textarea></div>
-          <button class="btn btn-outline btn-sm" onclick="resetEmailTemplate()">Reset to default</button>
-        </div>
-      </div>
+      <div class="card"><div class="card-head"><h2>Email Template</h2></div><div class="card-body">
+        <div class="fg"><label>Subject (use {date})</label><input type="text" id="cfg-subject"></div>
+        <div class="fg"><label>Opening paragraph</label><textarea id="cfg-opening" rows="3"></textarea></div>
+        <div class="fg"><label>Closing paragraph</label><textarea id="cfg-closing" rows="2"></textarea></div>
+        <div class="fg"><label>Signature</label><textarea id="cfg-signature" rows="2"></textarea></div>
+        <button class="btn btn-outline btn-sm" onclick="resetEmailTemplate()">Reset to default</button>
+      </div></div>
     </div>
   </div>
 </div>
 
-<!-- ═══ USERS (admin only) ══════════════════════════════════════ -->
+<!-- ═══ USERS ════════════════════════════════════════════════════ -->
 <div class="page" id="page-users">
-  <div class="page-header"><div><div class="page-title">User Management</div><div class="page-sub">Add and manage users who can access this CRM</div></div></div>
+  <div class="page-header"><div><div class="page-title">User Management</div><div class="page-sub">Add users who can access this CRM</div></div></div>
   <div class="settings-layout">
-    <div>
-      <div class="card">
-        <div class="card-head"><h2>Add New User</h2></div>
-        <div class="card-body">
-          <div class="fr"><div class="fg"><label>Username <span class="req">*</span></label><input type="text" id="new-username" placeholder="jsmith"></div><div class="fg"><label>Display Name <span class="req">*</span></label><input type="text" id="new-displayname" placeholder="John Smith"></div></div>
-          <div class="fr"><div class="fg"><label>Initials</label><input type="text" id="new-initials" placeholder="JS" maxlength="2"></div><div class="fg"><label>Role</label><select id="new-role"><option value="user">User</option><option value="admin">Admin</option></select></div></div>
-          <div class="fg"><label>Password <span class="req">*</span></label><input type="password" id="new-password" placeholder="min. 6 characters"></div>
-          <button class="btn btn-orange" onclick="addUser()"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add User</button>
-        </div>
-      </div>
-    </div>
-    <div>
-      <div class="card">
-        <div class="card-head"><h2>Current Users</h2></div>
-        <div class="tbl-wrap" style="border:none">
-          <table class="dtbl"><thead><tr><th>Username</th><th>Name</th><th>Init.</th><th>Role</th><th></th></tr></thead><tbody id="userTableBody"></tbody></table>
-        </div>
-      </div>
+    <div class="card"><div class="card-head"><h2>Add New User</h2></div><div class="card-body">
+      <div class="fr"><div class="fg"><label>Username <span class="req">*</span></label><input type="text" id="new-username"></div><div class="fg"><label>Display Name <span class="req">*</span></label><input type="text" id="new-displayname"></div></div>
+      <div class="fr"><div class="fg"><label>Initials</label><input type="text" id="new-initials" maxlength="2"></div><div class="fg"><label>Role</label><select id="new-role"><option value="user">User</option><option value="admin">Admin</option></select></div></div>
+      <div class="fg"><label>Password <span class="req">*</span></label><input type="password" id="new-password"></div>
+      <button class="btn btn-orange" onclick="addUser()"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add User</button>
+    </div></div>
+    <div class="card"><div class="card-head"><h2>Current Users</h2></div>
+      <div class="tbl-wrap" style="border:none"><table class="dtbl"><thead><tr><th>Username</th><th>Name</th><th>Init.</th><th>Role</th><th></th></tr></thead><tbody id="userTableBody"></tbody></table></div>
     </div>
   </div>
 </div>
@@ -493,44 +581,14 @@ input,select,textarea{font-family:inherit}
     <div class="modal-head"><h3 id="evtModalTitle">New Event</h3><button class="modal-x" onclick="closeModal('evtModal')">✕</button></div>
     <div class="modal-body">
       <input type="hidden" id="ef-id">
+      <div class="fr"><div class="fg"><label>Event Name <span class="req">*</span></label><input type="text" id="ef-name"></div><div class="fg"><label>Sector</label><select id="ef-sector"><option value="">— Select —</option><option>Agribusiness</option><option>Food</option><option>Beverage</option><option>F&amp;B</option><option>Agri F&amp;B</option></select></div></div>
+      <div class="fr"><div class="fg"><label>Speaker</label><input type="text" id="ef-speaker" list="spkDatalist"><datalist id="spkDatalist"></datalist></div><div class="fg"><label>Requested Date</label><input type="date" id="ef-req"></div></div>
+      <div class="fr"><div class="fg"><label>Last F-UP Date</label><input type="date" id="ef-fup"></div><div class="fg"><label>Scheduled Date</label><input type="date" id="ef-sch"></div></div>
       <div class="fr">
-        <div class="fg"><label>Event Name <span class="req">*</span></label><input type="text" id="ef-name" placeholder="Management Day — AGRO3"></div>
-        <div class="fg"><label>Sector</label><select id="ef-sector"><option value="">— Select —</option><option>Agribusiness</option><option>Food</option><option>Beverage</option><option>F&amp;B</option><option>Agri F&amp;B</option></select></div>
+        <div class="fg"><label>Rate Pre-Call (0–5)</label><input type="hidden" id="ef-rating-pre" value="0"><div class="star-row" id="ef-rating-pre-stars"><button class="star-btn" type="button" onclick="setModalStar('ef-rating-pre',1)">☆</button><button class="star-btn" type="button" onclick="setModalStar('ef-rating-pre',2)">☆</button><button class="star-btn" type="button" onclick="setModalStar('ef-rating-pre',3)">☆</button><button class="star-btn" type="button" onclick="setModalStar('ef-rating-pre',4)">☆</button><button class="star-btn" type="button" onclick="setModalStar('ef-rating-pre',5)">☆</button></div></div>
+        <div class="fg"><label>Rate Call (0–5)</label><input type="hidden" id="ef-rating-call" value="0"><div class="star-row" id="ef-rating-call-stars"><button class="star-btn" type="button" onclick="setModalStar('ef-rating-call',1)">☆</button><button class="star-btn" type="button" onclick="setModalStar('ef-rating-call',2)">☆</button><button class="star-btn" type="button" onclick="setModalStar('ef-rating-call',3)">☆</button><button class="star-btn" type="button" onclick="setModalStar('ef-rating-call',4)">☆</button><button class="star-btn" type="button" onclick="setModalStar('ef-rating-call',5)">☆</button></div></div>
       </div>
-      <div class="fr">
-        <div class="fg"><label>Speaker</label><input type="text" id="ef-speaker" placeholder="Speaker name" list="spkDatalist"><datalist id="spkDatalist"></datalist></div>
-        <div class="fg"><label>Requested Date</label><input type="date" id="ef-req"></div>
-      </div>
-      <div class="fr">
-        <div class="fg"><label>Last F-UP Date</label><input type="date" id="ef-fup"></div>
-        <div class="fg"><label>Scheduled Date</label><input type="date" id="ef-sch"></div>
-      </div>
-      <!-- RATINGS -->
-      <div class="fr">
-        <div class="fg">
-          <label>Rate Pre-Call (0–5)</label>
-          <input type="hidden" id="ef-rating-pre" value="0">
-          <div class="star-row" id="ef-rating-pre-stars">
-            <button class="star-btn" type="button" onclick="setModalStar('ef-rating-pre',1)">☆</button>
-            <button class="star-btn" type="button" onclick="setModalStar('ef-rating-pre',2)">☆</button>
-            <button class="star-btn" type="button" onclick="setModalStar('ef-rating-pre',3)">☆</button>
-            <button class="star-btn" type="button" onclick="setModalStar('ef-rating-pre',4)">☆</button>
-            <button class="star-btn" type="button" onclick="setModalStar('ef-rating-pre',5)">☆</button>
-          </div>
-        </div>
-        <div class="fg">
-          <label>Rate Call (0–5)</label>
-          <input type="hidden" id="ef-rating-call" value="0">
-          <div class="star-row" id="ef-rating-call-stars">
-            <button class="star-btn" type="button" onclick="setModalStar('ef-rating-call',1)">☆</button>
-            <button class="star-btn" type="button" onclick="setModalStar('ef-rating-call',2)">☆</button>
-            <button class="star-btn" type="button" onclick="setModalStar('ef-rating-call',3)">☆</button>
-            <button class="star-btn" type="button" onclick="setModalStar('ef-rating-call',4)">☆</button>
-            <button class="star-btn" type="button" onclick="setModalStar('ef-rating-call',5)">☆</button>
-          </div>
-        </div>
-      </div>
-      <div class="fg"><label>Observations</label><textarea id="ef-obs" rows="2" placeholder="Notes, cancellation reason…"></textarea></div>
+      <div class="fg"><label>Observations</label><textarea id="ef-obs" rows="2"></textarea></div>
       <label class="chk-label"><input type="checkbox" id="ef-canceled"><span>Mark as Canceled</span></label>
     </div>
     <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal('evtModal')">Cancel</button><button class="btn btn-orange" onclick="saveEvent()">Save Event</button></div>
@@ -543,8 +601,8 @@ input,select,textarea{font-family:inherit}
     <div class="modal-head"><h3 id="spkModalTitle">New Speaker</h3><button class="modal-x" onclick="closeModal('spkModal')">✕</button></div>
     <div class="modal-body">
       <input type="hidden" id="sf-id">
-      <div class="fr"><div class="fg"><label>Full Name <span class="req">*</span></label><input type="text" id="sf-name" placeholder="John Smith"></div><div class="fg"><label>Company / Fund</label><input type="text" id="sf-company"></div></div>
-      <div class="fr"><div class="fg"><label>Sector</label><select id="sf-sector"><option value="">— Select —</option><option>Agribusiness</option><option>Food</option><option>Beverage</option><option>F&amp;B</option><option>Agri F&amp;B</option></select></div><div class="fg"><label>Email</label><input type="email" id="sf-email" placeholder="john@company.com"></div></div>
+      <div class="fr"><div class="fg"><label>Full Name <span class="req">*</span></label><input type="text" id="sf-name"></div><div class="fg"><label>Company / Fund</label><input type="text" id="sf-company"></div></div>
+      <div class="fr"><div class="fg"><label>Sector</label><select id="sf-sector"><option value="">— Select —</option><option>Agribusiness</option><option>Food</option><option>Beverage</option><option>F&amp;B</option><option>Agri F&amp;B</option></select></div><div class="fg"><label>Email</label><input type="email" id="sf-email"></div></div>
     </div>
     <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal('spkModal')">Cancel</button><button class="btn btn-orange" onclick="saveSpeaker()">Save Speaker</button></div>
   </div>
@@ -553,9 +611,8 @@ input,select,textarea{font-family:inherit}
 <div class="toast" id="toast"></div>
 
 <script>
-function toggleUserMenu(){document.getElementById('userDropdown').classList.toggle('open');}
-function closeUserMenu(){document.getElementById('userDropdown').classList.remove('open');}
-document.addEventListener('click',e=>{if(!e.target.closest('.user-menu'))closeUserMenu();});
+function onSortFieldChange(v){sortField=v;renderEvents();}
+function toggleSortDir(){sortDir=sortDir==='asc'?'desc':'asc';document.getElementById('sortDirBtn').textContent=sortDir==='asc'?'↑ Asc':'↓ Desc';renderEvents();}
 </script>
 <script src="app.js"></script>
 </body>

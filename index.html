@@ -148,7 +148,7 @@ button{font-family:inherit;cursor:pointer}input,select,textarea{font-family:inhe
 .chip.on{border-color:transparent;color:var(--white)}
 .chip[data-s="All"].on{background:var(--black)}
 .chip[data-s="Registered"].on{background:#2e7d32}
-.chip[data-s="Requested"].on{background:#1565c0}
+.chip[data-s="Requested"].on{background:#b35000}
 .chip[data-s="F-UP Needed"].on{background:#e65100}
 .chip[data-s="Scheduled"].on{background:#6a1b9a}
 .chip[data-s="Concluded"].on{background:#37474f}
@@ -191,9 +191,9 @@ button{font-family:inherit;cursor:pointer}input,select,textarea{font-family:inhe
 /* PILL */
 .pill{display:inline-block;padding:2px 8px;border-radius:3px;font-size:10px;font-weight:700;white-space:nowrap}
 .p-Registered{background:var(--st-reg-b);color:var(--st-reg-c)}
-.p-Requested{background:var(--st-req-b);color:var(--st-req-c)}
+.p-Requested{background:#fef3e2;color:#b35000}
 .p-FUP{background:var(--st-fup-b);color:var(--st-fup-c)}
-.p-Scheduled{background:var(--st-sch-b);color:var(--st-sch-c)}
+.p-Scheduled{background:#f0f0f0;color:#444444}
 .p-Concluded{background:var(--st-con-b);color:var(--st-con-c)}
 .p-Canceled{background:var(--st-can-b);color:var(--st-can-c)}
 
@@ -470,14 +470,22 @@ create table users (
   username text primary key,
   display_name text not null,
   initials text, role text default 'user',
-  password_hash text not null
+  password_hash text not null,
+  email_prefs jsonb
 );
 alter table events enable row level security;
 alter table speakers enable row level security;
 alter table users enable row level security;
 create policy "allow all" on events for all using (true);
 create policy "allow all" on speakers for all using (true);
-create policy "allow all" on users for all using (true);</div>
+create policy "allow all" on users for all using (true);
+
+create table settings (
+  id text primary key,
+  data jsonb
+);
+alter table settings enable row level security;
+create policy "allow all" on settings for all using (true);</div>
     </div></div>
   </div>
 </div>

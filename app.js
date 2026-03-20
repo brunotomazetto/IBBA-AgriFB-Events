@@ -76,7 +76,17 @@ async function tryLogin(username, password) {
 }
 function logout() { currentUser = null; sessionStorage.removeItem('crm_session'); showLoginScreen(); }
 function restoreSession() {
-  try { const s = sessionStorage.getItem('crm_session'); if (s) { currentUser = JSON.parse(s); return true; } } catch {}
+  try {
+    const s = sessionStorage.getItem('crm_session');
+    if (s) {
+      currentUser = JSON.parse(s);
+      // Merge emailPrefs from local users cache in case they were updated
+      const locals = getLocalUsers();
+      const cached = locals.find(u=>u.username===currentUser.username);
+      if(cached && cached.emailPrefs) currentUser.emailPrefs = cached.emailPrefs;
+      return true;
+    }
+  } catch {}
   return false;
 }
 
@@ -86,8 +96,8 @@ let activeFilter = 'All', sortField = 'registeredDate', sortDir = 'desc';
 let editEvtId = null, realtimeSub = null;
 
 const STATUSES = ['Registered','Requested','F-UP Needed','Scheduled','Concluded','Canceled'];
-const STATUS_COLORS = { 'Registered':'#2e7d32','Requested':'#1565c0','F-UP Needed':'#e65100','Scheduled':'#6a1b9a','Concluded':'#37474f','Canceled':'#b71c1c' };
-const STATUS_BG = { 'Registered':'#e8f5e9','Requested':'#e3f2fd','F-UP Needed':'#fff3e0','Scheduled':'#f3e5f5','Concluded':'#eceff1','Canceled':'#ffebee' };
+const STATUS_COLORS = { 'Registered':'#2e7d32','Requested':'#b35000','F-UP Needed':'#e65100','Scheduled':'#444444','Concluded':'#37474f','Canceled':'#b71c1c' };
+const STATUS_BG = { 'Registered':'#e8f5e9','Requested':'#fef3e2','F-UP Needed':'#fff0e6','Scheduled':'#f0f0f0','Concluded':'#eceff1','Canceled':'#ffebee' };
 const CFG_DEFAULTS = {
   name:'Bruno Tomazetto', initials:'BT', sla:7, to:'', cc:'',
   defaultStatuses:['Requested','F-UP Needed'],
@@ -110,6 +120,23 @@ function loadLocal() {
   cfg = { ...CFG_DEFAULTS, ...cfg };
 }
 
+// Save cfg (shared settings) to Supabase so all users get same email prefs
+async function saveCfgToDb() {
+  saveLocal();
+  if (!isOnline()) return;
+  await _supabase.from('settings').upsert({ id: 'global', data: cfg }, { onConflict: 'id' });
+}
+
+// Load cfg from Supabase on login
+async function loadCfgFromDb() {
+  if (!isOnline()) return;
+  const { data, error } = await _supabase.from('settings').select('data').eq('id','global').single();
+  if (!error && data?.data) {
+    cfg = { ...CFG_DEFAULTS, ...data.data };
+    saveLocal();
+  }
+}
+
 // ── Supabase CRUD ────────────────────────────────────────────────
 async function dbLoadAll() {
   if (!isOnline()) { loadLocal(); return; }
@@ -121,6 +148,7 @@ async function dbLoadAll() {
     if (er.error) throw er.error;
     events   = (er.data || []).map(dbToEv);
     speakers = (sr.data || []).map(r => ({ id:r.id, name:r.name, company:r.company, sector:r.sector, email:r.email }));
+    await loadCfgFromDb(); // load shared settings (email prefs etc)
     saveLocal();
   } catch (e) { console.error('DB load:', e); loadLocal(); toast('Using local data.','err'); }
 }
@@ -551,15 +579,25 @@ function populateSpkDatalist(){
 
 // ── Email ────────────────────────────────────────────────────────
 function renderEmailPage(){
-  document.getElementById('emailTo').value=cfg.to||'';
-  document.getElementById('emailCc').value=cfg.cc||'';
+  // Shared email prefs stored in cfg (same for all users)
+  document.getElementById('emailTo').value = cfg.to||'';
+  document.getElementById('emailCc').value = cfg.cc||'';
   document.getElementById('emailStatusFilter').innerHTML=STATUSES.map(s=>
     '<label class="chk-label"><input type="checkbox" name="eStat" value="'+s+'" '+(cfg.defaultStatuses.includes(s)?'checked':'')+'>'+
     '<span>'+s+'</span></label>'
   ).join('');
 }
 
+async function saveEmailPrefs(){
+  // Save To, CC and statuses to shared cfg (synced via Supabase for all users)
+  cfg.to = document.getElementById('emailTo').value.trim();
+  cfg.cc = document.getElementById('emailCc').value.trim();
+  cfg.defaultStatuses = [...document.querySelectorAll('input[name=eStat]:checked')].map(c=>c.value);
+  await saveCfgToDb(); // sync email prefs for all users
+}
+
 async function generateEmail(){
+  await saveEmailPrefs(); // persist per-user prefs
   const to=document.getElementById('emailTo').value.trim();
   const selected=[...document.querySelectorAll('input[name=eStat]:checked')].map(c=>c.value);
   if(!selected.length){toast('Select at least one status.','err');return;}
@@ -659,22 +697,43 @@ function copyEmailHTML(){
 
 function openMailto(){
   if(!window._emailHTML){toast('Generate first.','err');return;}
-  const win=window.open('','_blank','width=820,height=640,resizable=yes');
+  const win=window.open('','_blank','width=860,height=680,resizable=yes');
   if(!win){toast('Allow popups for this site, then try again.','err');return;}
+  const to = window._emailTo||'';
+  const cc = document.getElementById('emailCc')?.value.trim()||'';
+  const subj = encodeURIComponent(window._emailSubject||'');
+  const mailtoLink = 'mailto:'+encodeURIComponent(to)
+    +(cc?'?cc='+encodeURIComponent(cc)+'&':'?')
+    +'subject='+subj;
   const body=window._emailHTML.replace(/<html>|<\/html>|<body[^>]*>|<\/body>/gi,'');
-  const page='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Email — Copy to Outlook</title>'
-    +'<style>*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif}'
-    +'.bar{background:#1a1a1a;color:#fff;padding:12px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;position:sticky;top:0;z-index:10}'
-    +'.bar b{color:#F15A22}.step{font-size:12px;display:flex;align-items:center;gap:6px}'
+  const page='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Send via Outlook</title>'
+    +'<style>*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f4f4f4}'
+    +'.topbar{background:#1a1a1a;color:#fff;padding:0 18px;display:flex;align-items:center;height:52px;gap:14px;position:sticky;top:0;z-index:10}'
+    +'.topbar-logo{color:#F15A22;font-weight:700;font-size:15px;margin-right:6px}'
+    +'.step{font-size:12px;display:flex;align-items:center;gap:5px;white-space:nowrap}'
     +'.num{width:20px;height:20px;border-radius:50%;background:#F15A22;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:10px;flex-shrink:0}'
-    +'.sel-btn{background:#F15A22;color:#fff;border:none;border-radius:4px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;margin-left:auto}'
-    +'.sel-btn:hover{background:#d94e1a}.content{padding:20px}'
+    +'.btn-sel{background:#F15A22;color:#fff;border:none;border-radius:4px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;margin-left:auto;white-space:nowrap}'
+    +'.btn-sel:hover{background:#d94e1a}'
+    +'.meta-bar{background:#fff;border-bottom:1px solid #e0e0e0;padding:10px 20px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}'
+    +'.meta-field{display:flex;align-items:center;gap:6px;font-size:12px;color:#555}'
+    +'.meta-label{font-weight:600;color:#1a1a1a;min-width:30px}'
+    +'.meta-val{color:#b35000;font-weight:500}'
+    +'.btn-open-ol{background:#1a1a1a;color:#fff;border:none;border-radius:4px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;margin-left:auto}'
+    +'.btn-open-ol:hover{background:#333}'
+    +'.content{padding:20px;max-width:760px;margin:0 auto}'
     +'</style></head><body>'
-    +'<div class="bar">'
-    +'<div class="step"><div class="num">1</div><span>Click <b>Select All</b></span></div>'
-    +'<div class="step"><div class="num">2</div><span>Press <b>Ctrl+C</b></span></div>'
-    +'<div class="step"><div class="num">3</div><span>Outlook → <b>New Email</b> → body → <b>Ctrl+V</b> → Send</span></div>'
-    +'<button class="sel-btn" onclick="selAll()">Select All Content</button>'
+    +'<div class="topbar">'
+    +'<span class="topbar-logo">itaú BBA</span>'
+    +'<div class="step"><div class="num">1</div><span>Click <b>Open in Outlook</b> to create a new email</span></div>'
+    +'<div class="step"><div class="num">2</div><span>Click <b>Select All</b> then <b>Ctrl+C</b></span></div>'
+    +'<div class="step"><div class="num">3</div><span>Paste into Outlook body → Send</span></div>'
+    +'<button class="btn-sel" onclick="selAll()">Select All Content</button>'
+    +'</div>'
+    +'<div class="meta-bar">'
+    +'<div class="meta-field"><span class="meta-label">To:</span><span class="meta-val">'+to+'</span></div>'
+    +(cc?'<div class="meta-field"><span class="meta-label">CC:</span><span class="meta-val">'+cc+'</span></div>':' ')
+    +'<div class="meta-field" style="flex:1"><span class="meta-label">Subject:</span><span style="font-size:12px;color:#333">'+( window._emailSubject||'')+'</span></div>'
+    +'<a class="btn-open-ol" href="'+mailtoLink+'" target="_blank">Open in Outlook ↗</a>'
     +'</div>'
     +'<div class="content" id="ec">'+body+'</div>'
     +'<script>function selAll(){'
@@ -723,7 +782,7 @@ async function saveSettings(){
     await saveUserToDb(currentUser);
     sessionStorage.setItem('crm_session',JSON.stringify(currentUser));
   }
-  saveLocal();
+  await saveCfgToDb();
   document.getElementById('userAvatarBtn').textContent=currentUser.initials;
   toast('Settings saved.','ok');
 }

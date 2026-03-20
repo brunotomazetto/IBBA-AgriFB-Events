@@ -433,7 +433,7 @@ button{font-family:inherit;cursor:pointer}input,select,textarea{font-family:inhe
       </div></div>
       <button class="btn btn-o btn-full" onclick="generateEmail()"><svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="2,4 12,13 22,4"/></svg>Generate Preview</button>
     </div>
-    <div class="card"><div class="card-head"><h2>Preview</h2><div style="display:flex;gap:6px"><button class="btn btn-ghost btn-sm" onclick="copyEmailHTML()">Copy HTML</button><button class="btn btn-b btn-sm" onclick="openMailto()">Open in Outlook</button></div></div>
+    <div class="card"><div class="card-head"><h2>Preview</h2><div style="display:flex;gap:6px"><button class="btn btn-ghost btn-sm" onclick="copyEmailHTML()">Copy HTML</button><button class="btn btn-b btn-sm" onclick="openMailto()">Open Email Window</button></div></div>
     <div style="padding:14px" id="emailPreviewWrap"><div style="color:var(--text-xs);text-align:center;padding:40px 0;font-size:12px">Configure and click <strong>Generate Preview</strong></div></div></div>
   </div>
 </div>
@@ -539,8 +539,9 @@ create policy "allow all" on users for all using (true);</div>
     <div class="mbody">
       <input type="hidden" id="ef-id">
       <div class="fr"><div class="fg"><label>Event Name <span class="req">*</span></label><input type="text" id="ef-name"></div><div class="fg"><label>Sector</label><select id="ef-sector"><option value="">— Select —</option><option>Agribusiness</option><option>Food</option><option>Beverage</option><option>F&amp;B</option><option>Agri F&amp;B</option></select></div></div>
-      <div class="fr"><div class="fg"><label>Speaker</label><input type="text" id="ef-speaker" list="spkDatalist"><datalist id="spkDatalist"></datalist></div><div class="fg"><label>Requested Date</label><input type="date" id="ef-req"></div></div>
-      <div class="fr"><div class="fg"><label>Last F-UP Date</label><input type="date" id="ef-fup"></div><div class="fg"><label>Scheduled Date</label><input type="date" id="ef-sch"></div></div>
+      <div class="fr"><div class="fg"><label>Speaker</label><input type="text" id="ef-speaker" list="spkDatalist"><datalist id="spkDatalist"></datalist></div><div class="fg"><label>Registered Date</label><input type="date" id="ef-reg"></div></div>
+      <div class="fr"><div class="fg"><label>Requested Date</label><input type="date" id="ef-req"></div><div class="fg"><label>Last F-UP Date</label><input type="date" id="ef-fup"></div></div>
+      <div class="fr"><div class="fg"><label>Scheduled Date</label><input type="date" id="ef-sch"></div><div class="fg"></div></div>
       <div class="fr">
         <div class="fg"><label>Rate Pre-Call</label><input type="hidden" id="ef-rating-pre" value="0"><div class="star-row" id="ef-rating-pre-stars"><button class="star-btn" type="button" onclick="setModalStar('ef-rating-pre',1)">☆</button><button class="star-btn" type="button" onclick="setModalStar('ef-rating-pre',2)">☆</button><button class="star-btn" type="button" onclick="setModalStar('ef-rating-pre',3)">☆</button><button class="star-btn" type="button" onclick="setModalStar('ef-rating-pre',4)">☆</button><button class="star-btn" type="button" onclick="setModalStar('ef-rating-pre',5)">☆</button></div></div>
         <div class="fg"><label>Rate Call</label><input type="hidden" id="ef-rating-call" value="0"><div class="star-row" id="ef-rating-call-stars"><button class="star-btn" type="button" onclick="setModalStar('ef-rating-call',1)">☆</button><button class="star-btn" type="button" onclick="setModalStar('ef-rating-call',2)">☆</button><button class="star-btn" type="button" onclick="setModalStar('ef-rating-call',3)">☆</button><button class="star-btn" type="button" onclick="setModalStar('ef-rating-call',4)">☆</button><button class="star-btn" type="button" onclick="setModalStar('ef-rating-call',5)">☆</button></div></div>

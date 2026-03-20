@@ -6,8 +6,14 @@
 // ── Supabase client ─────────────────────────────────────────────
 let _supabase = null;
 
+const SUPABASE_URL = 'https://adzincwymsigigibspyl.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFkemluY3d5bXNpZ2lnaWJzcHlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5NTkyODgsImV4cCI6MjA4OTUzNTI4OH0.Ii26AIWaTh1MvYABuqacmrFDYFTg0I_FqpdoTcdIRfo';
+
 function getSupabaseCfg() {
-  try { return JSON.parse(localStorage.getItem('crm_supabase')) || {}; } catch { return {}; }
+  try {
+    const saved = JSON.parse(localStorage.getItem('crm_supabase')) || {};
+    return { url: saved.url || SUPABASE_URL, key: saved.key || SUPABASE_KEY };
+  } catch { return { url: SUPABASE_URL, key: SUPABASE_KEY }; }
 }
 function saveSupabaseCfg(url, key) {
   localStorage.setItem('crm_supabase', JSON.stringify({ url, key }));

@@ -608,12 +608,17 @@ async function generateEmail(){
   const doFUP=document.getElementById('resetFUP').checked;
   const doReg=document.getElementById('resetReg').checked;
 
-  // Update statuses — never touch registeredDate
+  // For every Registered/Requested/F-UP Needed event in the email:
+  // 1. Set fupDate = today (resets the 7-day counter from zero)
+  // 2. Set requestedDate if missing (moves Registered → Requested)
   const toUpdate=[];
-  events.forEach(e=>{
+  matched.forEach(e=>{
     const st=computeStatus(e);
-    if(doFUP && st==='F-UP Needed'){ e.fupDate=todayIso; toUpdate.push(e); }
-    if(doReg && st==='Registered') { e.requestedDate=todayIso; toUpdate.push(e); }
+    if(['Registered','Requested','F-UP Needed'].includes(st)){
+      e.fupDate=todayIso; // always reset counter
+      if(!e.requestedDate) e.requestedDate=todayIso; // Registered → Requested
+      toUpdate.push(e);
+    }
   });
   for(const e of toUpdate) await dbSaveEvent(e);
 

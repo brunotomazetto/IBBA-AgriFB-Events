@@ -165,6 +165,7 @@ async function dbDeleteEvent(id) {
 }
 function evToDb(ev) {
   return { id:ev.id, name:ev.name, sector:ev.sector||null,
+    speaker:ev.speaker||null,
     registered_date:ev.registeredDate||null, requested_date:ev.requestedDate||null,
     fup_date:ev.fupDate||null, scheduled_date:ev.scheduledDate||null,
     obs:ev.obs||null, canceled:!!ev.canceled,
@@ -172,6 +173,7 @@ function evToDb(ev) {
 }
 function dbToEv(r) {
   return { id:r.id, name:r.name, sector:r.sector,
+    speaker:r.speaker||'',
     registeredDate:r.registered_date, requestedDate:r.requested_date,
     fupDate:r.fup_date, scheduledDate:r.scheduled_date,
     obs:r.obs, canceled:r.canceled,
@@ -492,6 +494,7 @@ function renderEvents(){
     return '<tr class="'+(st==='Canceled'?'canceled':'')+'">'
       +'<td><span class="evt-id">'+e.id+'</span></td>'
       +'<td title="'+e.name+'"><strong>'+e.name+'</strong></td>'
+      +'<td>'+(e.speaker||'—')+'</td>'
       +'<td>'+(e.sector||'—')+'</td>'
       +'<td><span class="pill '+pillClass(st)+'">'+st+'</span></td>'
       +'<td>'+fmtDate(e.registeredDate)+'</td>'
